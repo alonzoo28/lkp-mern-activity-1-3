@@ -1,0 +1,58 @@
+{
+  "info": {
+    "name": "LKP Activity 1.3 MongoDB CRUD",
+    "description": "Demonstrates MongoDB-backed Project CRUD through the LKP Express API. The server seeds mock project records when the collection is empty. Do not use real personal data or place credentials in this collection.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api" },
+    { "key": "projectId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Check API and MongoDB connection",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('API responds with HTTP 200', function () { pm.response.to.have.status(200); });", "pm.test('MongoDB is connected', function () { pm.expect(pm.response.json().database).to.eql('connected'); });"] } }]
+    },
+    {
+      "name": "2. Read all projects (GET)",
+      "request": { "method": "GET", "url": "{{baseUrl}}/projects" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('List responds with HTTP 200', function () { pm.response.to.have.status(200); });", "pm.test('Response contains an array of projects', function () { pm.expect(pm.response.json().data).to.be.an('array'); });"] } }]
+    },
+    {
+      "name": "3. Create mock project (POST)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"title\": \"Postman CRUD Demonstration\",\n  \"category\": \"Education\",\n  \"status\": \"Proposed\",\n  \"date\": \"2026-11-24\",\n  \"location\": \"Paco, Obando, Bulacan\",\n  \"reach\": \"Mock test record\",\n  \"summary\": \"Temporary mock project created from Postman.\",\n  \"result\": \"This record is for CRUD testing only.\"\n}" },
+        "url": "{{baseUrl}}/projects"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Create responds with HTTP 201', function () { pm.response.to.have.status(201); });", "const project = pm.response.json().data;", "pm.collectionVariables.set('projectId', project.id);", "pm.test('Created project has an ID', function () { pm.expect(project.id).to.be.a('string'); });"] } }]
+    },
+    {
+      "name": "4. Read created project (GET by ID)",
+      "request": { "method": "GET", "url": "{{baseUrl}}/projects/{{projectId}}" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Read responds with HTTP 200', function () { pm.response.to.have.status(200); });", "pm.test('Read returns the created mock record', function () { pm.expect(pm.response.json().data.title).to.eql('Postman CRUD Demonstration'); });"] } }]
+    },
+    {
+      "name": "5. Update project (PUT)",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"title\": \"Postman CRUD Demonstration Updated\",\n  \"status\": \"Planned\",\n  \"summary\": \"Updated by the Postman CRUD demonstration.\"\n}" },
+        "url": "{{baseUrl}}/projects/{{projectId}}"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Update responds with HTTP 200', function () { pm.response.to.have.status(200); });", "pm.test('Updated title and status are returned', function () { const p = pm.response.json().data; pm.expect(p.title).to.eql('Postman CRUD Demonstration Updated'); pm.expect(p.status).to.eql('Planned'); });"] } }]
+    },
+    {
+      "name": "6. Delete project (DELETE)",
+      "request": { "method": "DELETE", "url": "{{baseUrl}}/projects/{{projectId}}" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Delete responds with HTTP 200', function () { pm.response.to.have.status(200); });", "pm.test('Delete response confirms removal', function () { pm.expect(pm.response.json().message).to.eql('Project deleted.'); });"] } }]
+    },
+    {
+      "name": "7. Confirm deleted project is gone (GET by ID)",
+      "request": { "method": "GET", "url": "{{baseUrl}}/projects/{{projectId}}" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Deleted project returns HTTP 404', function () { pm.response.to.have.status(404); });"] } }]
+    }
+  ]
+}
